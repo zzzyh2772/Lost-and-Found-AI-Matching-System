@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能匹配</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .similarity-bar {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .similarity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd166, #06d6a0);
+            transition: width 0.5s ease;
+        }
+
+        .match-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #0d6efd;
+        }
+
+        .bi {
+            vertical-align: -.125em;
+        }
+
+        .top-navbar {
+            margin-bottom: 1.5rem;
+        }
+        .nav-back {
+            text-decoration: none;
+            color: #0d6efd;
+        }
+        .nav-back:hover {
+            text-decoration: underline;
+        }
+        .selected-item {
+            background: #f8f9fa;
+            border: 2px solid #0d6efd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .selected-item h6 {
+            color: #0d6efd;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-3">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white rounded shadow top-navbar">
+            <div class="container-fluid">
+                <a class="navbar-brand nav-back" href="/">
+                    <i class="bi bi-arrow-left"></i> 返回首页
+                </a>
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <a href="/lost" class="btn btn-outline-danger btn-sm me-2">
+                            <i class="bi bi-search"></i> 丢失物品
+                        </a>
+                        <a href="/found" class="btn btn-outline-success btn-sm me-2">
+                            <i class="bi bi-eye"></i> 招领物品
+                        </a>
+                    </div>
+                    <span class="navbar-text text-muted">
+                        <i class="bi bi-cpu"></i> AI智能匹配
+                    </span>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container mt-2">
+        <h2 class="mb-4"><i class="bi bi-graph-up"></i> 智能匹配系统</h2>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-sliders"></i> 匹配设置
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="lostItemSelect" class="form-label">
+                                <i class="bi bi-exclamation-triangle text-danger"></i> 选择丢失物品
+                            </label>
+                            <select class="form-select" id="lostItemSelect">
+                                <option value="">请选择丢失物品...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="foundItemSelect" class="form-label">
+                                <i class="bi bi-hand-thumbs-up text-success"></i> 选择招领物品
+                            </label>
+                            <select class="form-select" id="foundItemSelect">
+                                <option value="">请选择招领物品...</option>
+                            </select>
+                        </div>
+
+                        <div id="selectedItems" class="d-none">
+                            <!-- 选中的物品会显示在这里 -->
+                        </div>
+
+                        <button id="matchBtn" class="btn btn-primary w-100" disabled>
+                            <span class="spinner-border spinner-border-sm d-none" id="matchSpinner"></span>
+                            <i class="bi bi-lightning"></i> 开始匹配
+                        </button>
+
+                        <div class="mt-3 d-grid gap-2">
+                            <a href="/lost" class="btn btn-outline-danger">
+                                <i class="bi bi-search"></i> 查看所有丢失物品
+                            </a>
+                            <a href="/found" class="btn btn-outline-success">
+                                <i class="bi bi-eye"></i> 查看所有招领物品
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="bi bi-info-circle"></i> 匹配说明
+                    </div>
+                    <div class="card-body">
+                        <p><strong><i class="bi bi-star"></i> 匹配步骤：</strong></p>
+                        <ol class="mb-3">
+                            <li>选择一个丢失物品</li>
+                            <li>选择一个招领物品</li>
+                            <li>点击"开始匹配"</li>
+                            <li>查看匹配结果</li>
+                        </ol>
+                        <p class="mb-0"><small class="text-muted">系统会比较两个物品的特征并给出匹配分数</small></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-list-check"></i> 匹配结果
+                    </div>
+                    <div class="card-body">
+                        <!-- 加载状态 -->
+                        <div id="loading" class="text-center d-none">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+                            <p class="mt-3"><i class="bi bi-robot"></i> AI正在分析匹配...</p>
+                            <p class="text-muted">请稍候，系统正在计算相似度</p>
+                        </div>
+
+                        <!-- 初始状态 -->
+                        <div id="noSelection" class="text-center">
+                            <i class="bi bi-search display-1 text-muted"></i>
+                            <h5 class="mt-3">请选择两个物品开始匹配</h5>
+                            <p class="text-muted">左侧选择一个丢失物品和一个招领物品进行匹配</p>
+                        </div>
+
+                        <!-- 匹配结果 -->
+                        <div id="matchResults" class="d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5><i class="bi bi-check-circle"></i> 匹配完成</h5>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="resetMatch()">
+                                    <i class="bi bi-arrow-clockwise"></i> 重新匹配
+                                </button>
+                            </div>
+
+                            <!-- 匹配详情 -->
+                            <div id="matchDetails"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const lostItemSelect = document.getElementById('lostItemSelect');
+            const foundItemSelect = document.getElementById('foundItemSelect');
+            const selectedItemsDiv = document.getElementById('selectedItems');
+            const matchBtn = document.getElementById('matchBtn');
+            const matchSpinner = document.getElementById('matchSpinner');
+            const loading = document.getElementById('loading');
+            const noSelection = document.getElementById('noSelection');
+            const matchResults = document.getElementById('matchResults');
+            const matchDetails = document.getElementById('matchDetails');
+
+            let selectedLostItem = null;
+            let selectedFoundItem = null;
+            let lostItemsCache = [];
+            let foundItemsCache = [];
+
+            // 重置匹配状态
+            function resetMatch() {
+                lostItemSelect.value = '';
+                foundItemSelect.value = '';
+                selectedLostItem = null;
+                selectedFoundItem = null;
+                selectedItemsDiv.classList.add('d-none');
+                selectedItemsDiv.innerHTML = '';
+                matchBtn.disabled = true;
+                noSelection.classList.remove('d-none');
+                matchResults.classList.add('d-none');
+                loading.classList.add('d-none');
+            }
+
+            // 加载物品列表
+            async function loadItems() {
+                try {
+                    // 同时加载丢失和招领物品
+                    const [lostResponse, foundResponse] = await Promise.all([
+                        fetch('/api/items/lost'),
+                        fetch('/api/items/found')
+                    ]);
+
+                    if (!lostResponse.ok || !foundResponse.ok) {
+                        throw new Error('加载物品失败');
+                    }
+
+                    const lostData = await lostResponse.json();
+                    const foundData = await foundResponse.json();
+
+                    lostItemsCache = lostData.items || [];
+                    foundItemsCache = foundData.items || [];
+
+                    // 填充丢失物品下拉框
+                    lostItemSelect.innerHTML = '<option value="">请选择丢失物品...</option>';
+                    if (lostItemsCache.length > 0) {
+                        lostItemsCache.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.textContent = `${item.title} - ${item.lost_location} (${item.lost_date || '无日期'})`;
+                            lostItemSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = "";
+                        option.textContent = "暂无丢失物品";
+                        option.disabled = true;
+                        lostItemSelect.appendChild(option);
+                    }
+
+                    // 填充招领物品下拉框
+                    foundItemSelect.innerHTML = '<option value="">请选择招领物品...</option>';
+                    if (foundItemsCache.length > 0) {
+                        foundItemsCache.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.textContent = `${item.title} - ${item.found_location} (${item.found_date || '无日期'})`;
+                            foundItemSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = "";
+                        option.textContent = "暂无招领物品";
+                        option.disabled = true;
+                        foundItemSelect.appendChild(option);
+                    }
+
+                } catch (error) {
+                    console.error('加载物品失败:', error);
+                    lostItemSelect.innerHTML = '<option value="">加载失败，请刷新页面</option>';
+                    foundItemSelect.innerHTML = '<option value="">加载失败，请刷新页面</option>';
+                }
+            }
+
+            // 显示选中的物品
+            function displaySelectedItems() {
+                if (selectedLostItem && selectedFoundItem) {
+                    let html = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="selected-item">
+                                    <h6><i class="bi bi-exclamation-triangle text-danger"></i> 丢失物品</h6>
+                                    <p><strong>${escapeHtml(selectedLostItem.title)}</strong></p>
+                                    <p class="text-muted mb-1">${escapeHtml(selectedLostItem.description || '无描述')}</p>
+                                    <p class="mb-1"><small><i class="bi bi-geo-alt"></i> ${escapeHtml(selectedLostItem.lost_location)}</small></p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="selected-item">
+                                    <h6><i class="bi bi-hand-thumbs-up text-success"></i> 招领物品</h6>
+                                    <p><strong>${escapeHtml(selectedFoundItem.title)}</strong></p>
+                                    <p class="text-muted mb-1">${escapeHtml(selectedFoundItem.description || '无描述')}</p>
+                                    <p class="mb-1"><small><i class="bi bi-geo-alt"></i> ${escapeHtml(selectedFoundItem.found_location)}</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    selectedItemsDiv.innerHTML = html;
+                    selectedItemsDiv.classList.remove('d-none');
+                    matchBtn.disabled = false;
+                } else {
+                    selectedItemsDiv.classList.add('d-none');
+                    matchBtn.disabled = true;
+                }
+            }
+
+            // 监听丢失物品选择
+            lostItemSelect.addEventListener('change', function() {
+                const itemId = this.value;
+                if (itemId) {
+                    selectedLostItem = lostItemsCache.find(item => item.id === itemId);
+                    displaySelectedItems();
+                } else {
+                    selectedLostItem = null;
+                    displaySelectedItems();
+                }
+            });
+
+            // 监听招领物品选择
+            foundItemSelect.addEventListener('change', function() {
+                const itemId = this.value;
+                if (itemId) {
+                    selectedFoundItem = foundItemsCache.find(item => item.id === itemId);
+                    displaySelectedItems();
+                } else {
+                    selectedFoundItem = null;
+                    displaySelectedItems();
+                }
+            });
+
+            // 开始匹配
+            matchBtn.addEventListener('click', async function() {
+                if (!selectedLostItem || !selectedFoundItem) return;
+
+                // 显示加载
+                loading.classList.remove('d-none');
+                noSelection.classList.add('d-none');
+                matchResults.classList.add('d-none');
+                matchBtn.disabled = true;
+                matchSpinner.classList.remove('d-none');
+
+                try {
+                    // 构建请求体 - 需要两个物品ID
+                    const requestBody = {
+                        lost_item_id: selectedLostItem.id,
+                        found_item_id: selectedFoundItem.id
+                    };
+
+                    console.log('发送匹配请求:', requestBody);
+
+                    const response = await fetch('/api/match', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    const data = await response.json();
+                    console.log('匹配结果:', data);
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    // 显示匹配结果
+                    displayMatchResult(data);
+
+                } catch (error) {
+                    console.error('匹配失败:', error);
+                    alert('匹配失败: ' + error.message);
+                } finally {
+                    // 隐藏加载
+                    loading.classList.add('d-none');
+                    matchSpinner.classList.add('d-none');
+                    matchBtn.disabled = false;
+                }
+            });
+
+            // 显示匹配结果
+            function displayMatchResult(data) {
+    // 新的匹配结果显示
+    let html = `
+        <div class="alert ${data.match_result.match_score > 50 ? 'alert-success' : 'alert-warning'}">
+            <h6><i class="bi bi-search"></i> 匹配完成</h6>
+            <p><strong>匹配分数：</strong> <span class="badge ${data.match_result.match_score > 50 ? 'bg-success' : 'bg-warning'} fs-6">${data.match_result.match_score}/100</span></p>
+            <p><strong>匹配等级：</strong> ${data.match_result.match_level}</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-danger text-white">
+                        <i class="bi bi-exclamation-triangle"></i> 丢失物品
+                    </div>
+                    <div class="card-body">
+                        <h6>${escapeHtml(data.lost_item.title)}</h6>
+                        <p class="text-muted">${escapeHtml(data.lost_item.description)}</p>
+                        <p><small><i class="bi bi-geo-alt"></i> ${escapeHtml(data.lost_item.lost_location)}</small></p>
+                        <p><small><i class="bi bi-calendar"></i> ${escapeHtml(data.lost_item.lost_date)}</small></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-hand-thumbs-up"></i> 招领物品
+                    </div>
+                    <div class="card-body">
+                        <h6>${escapeHtml(data.found_item.title)}</h6>
+                        <p class="text-muted">${escapeHtml(data.found_item.description)}</p>
+                        <p><small><i class="bi bi-geo-alt"></i> ${escapeHtml(data.found_item.found_location)}</small></p>
+                        <p><small><i class="bi bi-calendar"></i> ${escapeHtml(data.found_item.found_date)}</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="bi bi-robot"></i> AI分析结果
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar ${data.match_result.match_score > 50 ? 'bg-success' : 'bg-warning'}"
+                         style="width: ${data.match_result.match_score}%"
+                         role="progressbar">
+                        ${data.match_result.match_score}%
+                    </div>
+                </div>
+
+                <p><strong>BERT语义匹配分数：</strong> ${data.match_result.bert_score}/100</p>
+                <p><strong>AI分析：</strong> ${escapeHtml(data.match_result.qianwen_analysis)}</p>
+                <p><strong>建议：</strong> ${data.match_result.match_score >= 60 ? '🎉 建议联系对方确认' : '🤔 需要进一步核实'}</p>
+            </div>
+        </div>
+    `;
+
+    matchDetails.innerHTML = html;
+    matchResults.classList.remove('d-none');
+}
+
+            // 计算描述相似度
+            function calculateDescriptionSimilarity(desc1, desc2) {
+                if (!desc1 || !desc2) return 0;
+
+                const words1 = desc1.toLowerCase().split(/\s+/);
+                const words2 = desc2.toLowerCase().split(/\s+/);
+
+                const commonWords = words1.filter(word => words2.includes(word));
+                const similarity = (commonWords.length / Math.max(words1.length, words2.length)) * 100;
+
+                return Math.round(similarity);
+            }
+
+            // HTML转义函数
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // 初始化
+            loadItems();
+        });
+    </script>
+</body>
+</html>

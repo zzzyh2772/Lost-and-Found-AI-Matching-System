@@ -1,0 +1,426 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>丢失物品列表</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* 加载遮罩层样式 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        /* 图片默认样式 */
+        .default-image {
+            height: 200px;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+        .card-img-container {
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+        .card-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <nav class="navbar navbar-light bg-white rounded shadow mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    ← 返回首页
+                </a>
+                <div>
+                    <a href="/submit/lost" class="btn btn-danger">提交丢失</a>
+                    <a href="/found" class="btn btn-outline-danger ms-2">查看招领</a>
+                    <a href="/match" class="btn btn-primary ms-2">智能匹配</a>
+                </div>
+            </div>
+        </nav>
+
+        <h2 class="mb-4">🔍 丢失物品列表</h2>
+
+        {% if items %}
+            <div class="row">
+                {% for item in items %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-img-container">
+                            {% if item.image_url %}
+                                {% if item.image_url.startswith('http') or item.image_url.startswith('/uploads/') %}
+                                    <img src="{{ item.image_url }}"
+                                         alt="{{ item.title }}"
+                                         loading="lazy"
+                                         class="item-image"
+                                         data-item-id="{{ item.id }}">
+                                {% else %}
+                                    <!-- 尝试从uploads目录加载 -->
+                                    <img src="{{ url_for('uploaded_file', filename=item.image_url.split('/')[-1]) if item.image_url else '' }}"
+                                         alt="{{ item.title }}"
+                                         loading="lazy"
+                                         class="item-image"
+                                         data-item-id="{{ item.id }}">
+                                {% endif %}
+                            {% else %}
+                                <div class="default-image w-100 h-100">
+                                    <div class="text-center">
+                                        <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">无图片</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.title }}</h5>
+                            <p class="card-text">{{ item.description }}</p>
+                            <p class="text-muted mb-1">
+                                <small><i class="bi bi-geo-alt"></i> 丢失地点：{{ item.lost_location }}</small>
+                            </p>
+                            <p class="text-muted mb-1">
+                                <small><i class="bi bi-calendar"></i> 丢失时间：{{ item.lost_date }}</small>
+                            </p>
+                            <p class="text-muted mb-0">
+                                <small><i class="bi bi-telephone"></i> 联系方式：{{ item.contact_phone }}</small>
+                            </p>
+                            {% if item.contact_name %}
+                            <p class="text-muted mb-0">
+                                <small><i class="bi bi-person"></i> 联系人：{{ item.contact_name }}</small>
+                            </p>
+                            {% endif %}
+                            {% if item.category %}
+                            <p class="text-muted mb-0">
+                                <small><i class="bi bi-tag"></i> 类别：{{ item.category }}</small>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <small class="text-muted"><i class="bi bi-hash"></i> 物品ID: {{ item.id }}</small>
+                            <button class="btn btn-sm btn-primary float-end"
+                                    onclick="matchItem('{{ item.id }}', 'lost', '{{ item.title }}')">
+                                <i class="bi bi-robot"></i> AI匹配招领物品
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <h3>暂无丢失物品</h3>
+                <p class="text-muted">还没有人提交丢失物品</p>
+                <a href="/submit/lost" class="btn btn-danger">提交第一个丢失</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 加载遮罩层 -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+            <h5 class="mt-3">AI正在匹配中...</h5>
+            <p>正在为您查找相似的招领物品</p>
+        </div>
+    </div>
+
+    <!-- 匹配结果弹窗 -->
+    <div class="modal fade" id="matchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matchModalTitle">匹配结果</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="matchResultsContent">
+                        <!-- 结果会动态填充到这里 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <a href="/match" class="btn btn-primary">前往智能匹配页面</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+    let matchModal = null;
+    let currentItemName = '';
+
+    // 等待DOM完全加载
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('丢失物品页面加载完成，开始初始化...');
+
+        // 1. 检查Bootstrap是否加载
+        if (typeof bootstrap === 'undefined') {
+            console.error('错误：Bootstrap未加载！');
+            alert('页面资源加载失败，请刷新页面');
+            return;
+        }
+
+        // 2. 检查Modal元素是否存在
+        const modalElement = document.getElementById('matchModal');
+        if (!modalElement) {
+            console.error('错误：找不到matchModal元素');
+            return;
+        }
+
+        // 3. 初始化Modal
+        try {
+            matchModal = new bootstrap.Modal(modalElement);
+            console.log('弹窗初始化成功');
+        } catch (error) {
+            console.error('弹窗初始化失败:', error);
+            alert('页面初始化失败，请刷新');
+            return;
+        }
+
+        // 4. 设置图片错误处理
+        document.querySelectorAll('.item-image').forEach(img => {
+            img.onerror = function() {
+                console.log('图片加载失败:', this.src);
+                this.style.display = 'none';
+                const parent = this.parentElement;
+                parent.innerHTML = `
+                    <div class="default-image w-100 h-100">
+                        <div class="text-center">
+                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                            <p class="mt-2">图片加载失败</p>
+                        </div>
+                    </div>
+                `;
+            };
+        });
+
+        console.log('页面初始化完成');
+    });
+
+    async function matchItem(itemId, type, itemName) {
+        console.log('开始匹配，itemId:', itemId, 'type:', type, 'itemName:', itemName);
+        currentItemName = itemName;
+
+        // 检查弹窗是否初始化
+        if (!matchModal) {
+            console.error('弹窗未初始化');
+            alert('页面未完全加载，请刷新后重试');
+            return;
+        }
+
+        // 显示加载动画
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('d-none');
+        }
+
+        try {
+            console.log('发送匹配请求...');
+
+            // 丢失物品页面应该发送 lost_item_id
+            const requestBody = {
+                lost_item_id: itemId  // 正确参数名
+            };
+
+            console.log('请求体:', requestBody);
+
+            const response = await fetch('/api/match', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('响应状态:', response.status);
+
+            // 检查响应类型
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.log('收到非JSON响应:', text.substring(0, 200));
+                throw new Error('服务器返回了错误数据');
+            }
+
+            const data = await response.json();
+            console.log('响应数据:', data);
+
+            // 隐藏加载动画
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('d-none');
+            }
+
+            if (data.error) {
+                throw new Error(data.error);
+            } else {
+                // 显示匹配结果
+                showMatchResults(data);
+            }
+
+        } catch (error) {
+            // 隐藏加载动画
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('d-none');
+            }
+            console.error('匹配失败:', error);
+            alert('匹配失败: ' + error.message);
+        }
+    }
+
+    function showMatchResults(data) {
+        console.log('显示匹配结果，数据:', data);
+
+        const content = document.getElementById('matchResultsContent');
+        if (!content) {
+            console.error('错误：找不到matchResultsContent元素');
+            return;
+        }
+
+        if (!matchModal) {
+            console.error('错误：matchModal未初始化');
+            alert('弹窗未初始化');
+            return;
+        }
+
+        // 更新Modal标题
+        const modalTitle = document.getElementById('matchModalTitle');
+        if (modalTitle) {
+            modalTitle.textContent = `"${currentItemName}" 的匹配结果`;
+        }
+
+        if (data.success && data.matches && data.matches.length > 0) {
+            // 新结构：多个匹配项
+            let html = `
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-search"></i> 匹配完成</h6>
+                    <p><strong>找到 ${data.total_matches} 个可能匹配的招领物品</strong></p>
+                </div>
+            `;
+
+            // 显示前3个匹配结果
+            data.matches.slice(0, 3).forEach((match, index) => {
+                const matchResult = match.match_result;
+                const analysis = matchResult.qianwen_analysis || '无AI分析';
+                html += `
+                    <div class="card mb-3 ${matchResult.match_score > 70 ? 'border-success' : 'border-warning'}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6><i class="bi bi-check-circle"></i> 匹配项 ${index + 1}</h6>
+                                <span class="badge ${matchResult.match_score > 70 ? 'bg-success' : 'bg-warning'}">
+                                    ${matchResult.match_score}/100
+                                </span>
+                            </div>
+                            <p><strong>${escapeHtml(match.found_item.title)}</strong></p>
+                            <p class="text-muted">${escapeHtml(match.found_item.description)}</p>
+                            <p><small><i class="bi bi-geo-alt"></i> ${escapeHtml(match.found_item.found_location)}</small></p>
+                            <p><small><i class="bi bi-calendar"></i> ${escapeHtml(match.found_item.found_date)}</small></p>
+
+                            <div class="mt-2">
+                                <small class="text-muted">匹配等级：${matchResult.match_level}</small>
+                                <br>
+                                <small class="text-muted">AI分析：${escapeHtml(analysis.substring(0, 100))}...</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+        } else if (data.success && data.match_result) {
+            // 单物品匹配（兼容模式）
+            const matchResult = data.match_result;
+            const analysis = matchResult.qianwen_analysis || '无AI分析';
+            let html = `
+                <div class="alert ${matchResult.match_score > 50 ? 'alert-success' : 'alert-warning'}">
+                    <h6><i class="bi bi-search"></i> 匹配完成</h6>
+                    <p><strong>匹配分数：</strong> <span class="badge ${matchResult.match_score > 50 ? 'bg-success' : 'bg-warning'} fs-6">${matchResult.match_score}/100</span></p>
+                    <p><strong>匹配等级：</strong> ${matchResult.match_level}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <i class="bi bi-exclamation-triangle"></i> 丢失物品
+                            </div>
+                            <div class="card-body">
+                                <h6>${escapeHtml(data.lost_item.title)}</h6>
+                                <p class="text-muted">${escapeHtml(data.lost_item.description)}</p>
+                                <p><small><i class="bi bi-geo-alt"></i> ${escapeHtml(data.lost_item.lost_location)}</small></p>
+                                <p><small><i class="bi bi-calendar"></i> ${escapeHtml(data.lost_item.lost_date)}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <i class="bi bi-hand-thumbs-up"></i> 匹配的招领物品
+                            </div>
+                            <div class="card-body">
+                                <h6>${escapeHtml(data.found_item.title)}</h6>
+                                <p class="text-muted">${escapeHtml(data.found_item.description)}</p>
+                                <p><small><i class="bi bi-geo-alt"></i> ${escapeHtml(data.found_item.found_location)}</small></p>
+                                <p><small><i class="bi bi-calendar"></i> ${escapeHtml(data.found_item.found_date)}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6><i class="bi bi-robot"></i> AI分析结果：</h6>
+                    <p>${escapeHtml(analysis)}</p>
+                    <p><strong>BERT语义匹配分数：</strong> ${matchResult.bert_score}/100</p>
+                    <p><strong>建议：</strong> ${matchResult.match_score >= 60 ? '🎉 建议联系对方确认' : '🤔 需要进一步核实'}</p>
+                </div>
+            `;
+
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = `
+                <div class="text-center py-4">
+                    <h5><i class="bi bi-emoji-frown"></i> 未找到匹配的招领物品</h5>
+                    <p class="text-muted">暂时没有找到相似的招领物品记录。</p>
+                    <div class="mt-3">
+                        <a href="/match" class="btn btn-primary">前往智能匹配页面</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示Modal
+        try {
+            matchModal.show();
+            console.log('弹窗显示成功');
+        } catch (error) {
+            console.error('显示弹窗失败:', error);
+            alert('显示结果时出错: ' + error.message);
+        }
+    }
+
+    // HTML转义函数
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>

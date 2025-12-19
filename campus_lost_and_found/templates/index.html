@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园失物招领AI匹配平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4a9eff;
+            --secondary-color: #6c63ff;
+            --accent-color: #36d1dc;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --light-color: #f8fafc;
+            --text-color: #2d3748;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #ffffff;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* 导航栏 - 清新简洁 */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+
+        .navbar-brand i {
+            color: var(--secondary-color);
+        }
+
+        .nav-link {
+            color: #64748b !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color) !important;
+            background-color: rgba(74, 158, 255, 0.08);
+        }
+
+        /* 英雄区域 */
+        .hero-section {
+            background: linear-gradient(135deg, #f6f9ff 0%, #f0f7ff 100%);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-title {
+            font-weight: 700;
+            color: var(--text-color);
+            font-size: 2.75rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            color: #64748b;
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        /* 卡片设计 */
+        .feature-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            height: 100%;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 4px 4px 0 0;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .feature-text {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 99, 255, 0.3);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* 统计数据 */
+        .stats-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 3rem 0;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* 列表样式 */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.75rem 0;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list i {
+            color: var(--success-color);
+            margin-right: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* 流程步骤 */
+        .process-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .process-step:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h5 {
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* AI助手区域 */
+        .ai-promo {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 3rem 0;
+            border: 1px solid rgba(74, 158, 255, 0.2);
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+
+        /* 页脚 */
+        footer {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-top: 4rem;
+        }
+
+        footer p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.5rem;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+
+            .feature-card {
+                margin-bottom: 1.5rem;
+            }
+
+            .process-step {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>校园失物招领
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/"><i class="fas fa-home me-1"></i>首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/lost"><i class="fas fa-search me-1"></i>丢失物品</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/found"><i class="fas fa-hand-holding-heart me-1"></i>招领物品</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/match"><i class="fas fa-brain me-1"></i>智能匹配</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/ai/assistant"><i class="fas fa-robot me-1"></i>AI助手</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="hero-section">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <h1 class="hero-title">校园失物招领AI匹配平台</h1>
+                    <p class="hero-subtitle">基于先进AI技术，为您提供智能、高效的失物招领匹配服务，让遗失的物品快速回到主人身边。</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/match" class="btn btn-primary">
+                            <i class="fas fa-play-circle me-2"></i>开始匹配
+                        </a>
+                        <a href="/ai/assistant" class="btn btn-outline-primary">
+                            <i class="fas fa-robot me-2"></i>AI助手
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-5 mt-4 mt-lg-0">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <h4 class="feature-title">AI智能匹配</h4>
+                        <p class="feature-text">基于深度学习的智能物品匹配算法，实现高精度匹配</p>
+                        <a href="/match" class="btn btn-outline-primary btn-sm">了解更多</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="row text-center">
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="lostCount">0</div>
+                        <div class="stat-label">丢失物品</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="foundCount">0</div>
+                        <div class="stat-label">招领物品</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="matchCount">0</div>
+                        <div class="stat-label">成功匹配</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="successRate">0%</div>
+                        <div class="stat-label">匹配成功率</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-center mb-4 fw-bold">核心功能</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <h4 class="feature-title">图像智能识别</h4>
+                    <p class="feature-text">上传物品图片，自动识别特征、颜色、品牌等信息，建立详细档案。</p>
+                    <a href="/submit/lost" class="btn btn-outline-primary btn-sm">上传图片</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <h4 class="feature-title">语义智能分析</h4>
+                    <p class="feature-text">智能分析物品描述，提取关键特征，实现精准的语义匹配。</p>
+                    <a href="/ai/assistant" class="btn btn-outline-primary btn-sm">使用助手</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h4 class="feature-title">智能匹配引擎</h4>
+                    <p class="feature-text">多维度相似度计算算法，快速找到最相似的物品。</p>
+                    <a href="/match" class="btn btn-outline-primary btn-sm">开始匹配</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-lg-6 mb-4">
+                <h3 class="fw-bold mb-4">系统特色</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> 快速匹配：AI算法秒级完成匹配</li>
+                    <li><i class="fas fa-check-circle"></i> 隐私保护：用户信息加密存储</li>
+                    <li><i class="fas fa-check-circle"></i> 全平台支持：手机、平板、电脑</li>
+                    <li><i class="fas fa-check-circle"></i> 云端存储：图片安全存储</li>
+                    <li><i class="fas fa-check-circle"></i> 实时通知：匹配成功即时提醒</li>
+                    <li><i class="fas fa-check-circle"></i> 数据分析：可视化统计报告</li>
+                </ul>
+            </div>
+
+            <div class="col-lg-6">
+                <h3 class="fw-bold mb-4">使用流程</h3>
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h5>提交物品信息</h5>
+                        <p>通过简单表单提交丢失或拾获物品的信息，支持图片上传。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h5>AI智能分析</h5>
+                        <p>系统自动分析物品特征，建立多维度索引。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h5>智能匹配推荐</h5>
+                        <p>基于相似度算法，推荐最匹配的物品。</p>
+                    </div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h5>联系与认领</h5>
+                        <p>匹配成功后，安全联系方式协助完成交接。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-promo">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h3 class="fw-bold mb-3">
+                        全新AI助手上线 <span class="ai-badge">NEW</span>
+                    </h3>
+                    <p class="mb-4">不知道如何描述物品？让通义千问AI助手帮您生成专业的物品描述模板！</p>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <p><i class="fas fa-check text-success me-2"></i> 智能生成描述模板</p>
+                            <p><i class="fas fa-check text-success me-2"></i> 分析描述质量建议</p>
+                        </div>
+                        <div class="col-6">
+                            <p><i class="fas fa-check text-success me-2"></i> 生成专业寻物启事</p>
+                            <p><i class="fas fa-check text-success me-2"></i> 智能问答助手</p>
+                        </div>
+                    </div>
+                    <a href="/ai/assistant" class="btn btn-primary">
+                        <i class="fas fa-robot me-2"></i>体验AI助手
+                    </a>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <i class="fas fa-robot" style="font-size: 6rem; color: var(--primary-color); opacity: 0.8;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container text-center">
+            <p class="mb-2">校园失物招领AI匹配平台 &copy; 2024</p>
+            <p class="mb-0">技术支持：图像识别 + 自然语言处理 + 智能匹配算法</p>
+            <div class="mt-3">
+                <a href="#" class="text-white mx-2 opacity-75"><i class="fab fa-github"></i></a>
+                <a href="#" class="text-white mx-2 opacity-75"><i class="fas fa-envelope"></i></a>
+                <a href="#" class="text-white mx-2 opacity-75"><i class="fas fa-question-circle"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                // 1. 动画效果显示基础数字
+                animateNumber('lostCount', data.total_lost || 0);
+                animateNumber('foundCount', data.total_found || 0);
+                animateNumber('matchCount', data.total_matches || 0);
+
+                // 2. 计算并显示成功率
+                let rate = 0;
+                if (data.total_lost > 0) {
+                    // 成功率 = 匹配记录数 / 丢失物品总数
+                    rate = Math.round((data.total_matches / data.total_lost) * 100);
+                    if (rate > 100) rate = 100; // 防止超过100%
+                }
+                
+                // 使用带百分号的动画显示
+                animateNumber('successRate', rate, '%');
+
+            } catch (error) {
+                console.error('加载统计失败:', error);
+                // 设置默认值
+                document.getElementById('lostCount').textContent = '0';
+                document.getElementById('foundCount').textContent = '0';
+                document.getElementById('matchCount').textContent = '0';
+                document.getElementById('successRate').textContent = '0%';
+            }
+        }
+
+        // 修改animateNumber以支持后缀(如%)
+        function animateNumber(elementId, targetNumber, suffix = '') {
+            const element = document.getElementById(elementId);
+            const duration = 1000;
+            const step = 20;
+            const increment = targetNumber / (duration / step);
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= targetNumber) {
+                    clearInterval(timer);
+                    current = targetNumber;
+                }
+                // 如果目标是0，直接显示
+                if (targetNumber === 0) {
+                    element.textContent = '0' + suffix;
+                } else {
+                    element.textContent = Math.floor(current) + suffix;
+                }
+            }, step);
+        }
+
+        // 页面加载完成后获取统计数据
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+        });
+    </script>
+</body>
+</html>

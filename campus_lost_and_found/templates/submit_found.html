@@ -1,0 +1,562 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提交招领物品</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+        }
+        .form-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .alert-message {
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #666;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .back-link:hover {
+            color: #333;
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .form-control {
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .form-control:focus {
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+        }
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .image-preview-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            object-fit: cover;
+        }
+        .image-remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-preview-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .upload-hint {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .upload-btn {
+            cursor: pointer;
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        .upload-btn:hover {
+            border-color: #4a9eff;
+            background: #f0f7ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 返回链接 -->
+        <a href="/" class="back-link">
+            ← 返回首页
+        </a>
+
+        <!-- 页面标题 -->
+        <div class="text-center mb-4">
+            <h3 style="color: #333;">提交招领物品</h3>
+            <p class="text-muted">填写拾获物品信息，帮助失主找回物品</p>
+        </div>
+
+        <!-- 消息提示区域 -->
+        <div id="message-area"></div>
+
+        <!-- 主表单 -->
+        <div class="form-card">
+            <form id="foundForm">
+                <!-- 物品名称 -->
+                <div class="mb-4">
+                    <label class="form-label required">物品名称</label>
+                    <input type="text"
+                           class="form-control"
+                           id="title"
+                           name="title"
+                           required
+                           placeholder="例如：校园卡、手机、钥匙、钱包等"
+                           maxlength="50">
+                </div>
+
+                <!-- 物品类别 -->
+                <div class="mb-4">
+                    <label class="form-label">物品类别</label>
+                    <select class="form-control" id="category" name="category">
+                        <option value="">选择类别（可选）</option>
+                        <option value="证件类">证件类（校园卡、身份证、学生证等）</option>
+                        <option value="电子产品">电子产品（手机、耳机、充电宝等）</option>
+                        <option value="学习用品">学习用品（书籍、文具、笔记本等）</option>
+                        <option value="生活用品">生活用品（钥匙、水杯、雨伞等）</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <!-- 详细描述 -->
+                <div class="mb-4">
+                    <label class="form-label required">详细描述</label>
+                    <textarea class="form-control"
+                              id="description"
+                              name="description"
+                              rows="4"
+                              required
+                              placeholder="请详细描述物品特征，如：外观、尺寸、新旧程度、特殊标记等"
+                              maxlength="500"></textarea>
+                </div>
+
+                <!-- 拾获地点 -->
+                <div class="mb-4">
+                    <label class="form-label required">拾获地点</label>
+                    <input type="text"
+                           class="form-control"
+                           id="found_location"
+                           name="found_location"
+                           required
+                           placeholder="例如：图书馆三楼自习室、食堂一楼、教学楼B座"
+                           maxlength="100">
+                </div>
+
+                <!-- 联系电话 -->
+                <div class="mb-4">
+                    <label class="form-label required">联系电话</label>
+                    <input type="tel"
+                           class="form-control"
+                           id="contact_phone"
+                           name="contact_phone"
+                           required
+                           placeholder="请输入手机号码"
+                           pattern="[0-9]{11}"
+                           maxlength="11">
+                    <small class="text-muted">请输入11位手机号码</small>
+                </div>
+
+                <!-- 联系人姓名 -->
+                <div class="mb-4">
+                    <label class="form-label">联系人姓名（可选）</label>
+                    <input type="text"
+                           class="form-control"
+                           id="contact_name"
+                           name="contact_name"
+                           placeholder="请输入您的姓名"
+                           maxlength="20">
+                </div>
+
+                <!-- 物品图片上传 -->
+                <div class="mb-4">
+                    <label class="form-label">物品图片（可选）</label>
+
+                    <!-- 上传按钮 -->
+                    <div class="upload-btn" id="uploadTrigger">
+                        <div style="font-size: 24px; color: #666; margin-bottom: 8px;">📷</div>
+                        <div>点击选择图片，或拖拽到这里</div>
+                        <input type="file"
+                               class="d-none"
+                               id="imageInput"
+                               name="image"
+                               accept="image/*">
+                    </div>
+
+                    <div class="upload-hint">
+                        支持 JPG、PNG 格式，大小不超过 5MB
+                    </div>
+
+                    <!-- 图片预览区域 -->
+                    <div class="image-preview-container" id="imagePreview" style="display: none;">
+                        <div class="image-preview-wrapper">
+                            <img class="image-preview" id="previewImage">
+                            <button type="button" class="image-remove-btn" id="removeImageBtn">
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 确认条款 -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="agree"
+                               required>
+                        <label class="form-check-label" for="agree">
+                            我确认以上信息真实有效，并同意发布此招领信息
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <button type="submit" class="btn btn-success btn-submit" id="submitBtn">
+                    提交招领信息
+                </button>
+
+                <!-- 查看链接 -->
+                <div class="text-center mt-3">
+                    <a href="/found" class="text-decoration-none">
+                        查看所有招领物品 →
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- 填写提示 -->
+        <div class="mt-4 p-3 bg-light rounded">
+            <h6>温馨提示：</h6>
+            <ul class="mb-0 text-muted" style="font-size: 14px;">
+                <li>请妥善保管拾获物品</li>
+                <li>详细描述有助于更快找到失主</li>
+                <li>上传清晰图片可大幅提高匹配几率</li>
+                <li>准确填写拾获地点和时间范围</li>
+                <li>请确保联系方式正确有效</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('提交招领物品页面已加载');
+
+            // 元素引用
+            const uploadTrigger = document.getElementById('uploadTrigger');
+            const imageInput = document.getElementById('imageInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImage = document.getElementById('previewImage');
+            const removeImageBtn = document.getElementById('removeImageBtn');
+
+            let selectedFile = null;
+
+            // 显示消息函数
+            function showMessage(type, text) {
+                const messageArea = document.getElementById('message-area');
+
+                // 清除旧消息
+                messageArea.innerHTML = '';
+
+                // 创建新消息
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `alert alert-${type} alert-message`;
+                messageDiv.role = 'alert';
+                messageDiv.innerHTML = text;
+
+                messageArea.appendChild(messageDiv);
+
+                // 自动移除警告和错误消息
+                if (type === 'warning' || type === 'danger') {
+                    setTimeout(() => {
+                        messageDiv.style.opacity = '0';
+                        messageDiv.style.transition = 'opacity 0.5s';
+                        setTimeout(() => messageDiv.remove(), 500);
+                    }, 5000);
+                }
+            }
+
+            // 点击上传区域触发文件选择
+            uploadTrigger.addEventListener('click', () => {
+                imageInput.click();
+            });
+
+            // 拖拽上传
+            uploadTrigger.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadTrigger.style.borderColor = '#4a9eff';
+                uploadTrigger.style.background = '#f0f7ff';
+            });
+
+            uploadTrigger.addEventListener('dragleave', () => {
+                uploadTrigger.style.borderColor = '#ddd';
+                uploadTrigger.style.background = '#f8f9fa';
+            });
+
+            uploadTrigger.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadTrigger.style.borderColor = '#ddd';
+                uploadTrigger.style.background = '#f8f9fa';
+
+                if (e.dataTransfer.files.length > 0) {
+                    handleImageFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // 文件选择处理
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleImageFile(e.target.files[0]);
+                }
+            });
+
+            // 处理图片文件
+            function handleImageFile(file) {
+                // 验证文件类型
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    showMessage('danger', '请选择 JPG 或 PNG 格式的图片');
+                    return;
+                }
+
+                // 验证文件大小（最大5MB）
+                if (file.size > 5 * 1024 * 1024) {
+                    showMessage('danger', '图片文件太大，请选择小于5MB的图片');
+                    return;
+                }
+
+                selectedFile = file;
+
+                // 预览图片
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.onerror = () => {
+                    showMessage('danger', '图片读取失败，请选择其他图片');
+                    selectedFile = null;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // 移除图片
+            removeImageBtn.addEventListener('click', () => {
+                selectedFile = null;
+                imageInput.value = '';
+                imagePreview.style.display = 'none';
+            });
+
+            // 表单提交处理
+            const form = document.getElementById('foundForm');
+            const submitBtn = document.getElementById('submitBtn');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // 基础验证
+                const requiredFields = [
+                    {id: 'title', name: '物品名称'},
+                    {id: 'description', name: '详细描述'},
+                    {id: 'found_location', name: '拾获地点'},
+                    {id: 'contact_phone', name: '联系电话'}
+                ];
+
+                let hasError = false;
+
+                requiredFields.forEach(field => {
+                    const element = document.getElementById(field.id);
+                    if (!element.value.trim()) {
+                        element.classList.add('is-invalid');
+                        hasError = true;
+                    } else {
+                        element.classList.remove('is-invalid');
+                    }
+                });
+
+                // 电话格式验证
+                const phoneInput = document.getElementById('contact_phone');
+                const phonePattern = /^[0-9]{11}$/;
+                if (!phonePattern.test(phoneInput.value.trim())) {
+                    phoneInput.classList.add('is-invalid');
+                    showMessage('danger', '请输入有效的11位手机号码');
+                    hasError = true;
+                }
+
+                // 确认条款验证
+                if (!document.getElementById('agree').checked) {
+                    showMessage('warning', '请确认信息真实有效');
+                    hasError = true;
+                }
+
+                if (hasError) return;
+
+                // 收集基本数据
+                const baseData = {
+                    title: document.getElementById('title').value.trim(),
+                    description: document.getElementById('description').value.trim(),
+                    category: document.getElementById('category').value || '其他',
+                    found_location: document.getElementById('found_location').value.trim(),
+                    contact_phone: document.getElementById('contact_phone').value.trim(),
+                    contact_name: document.getElementById('contact_name').value.trim() || '',
+                    color: '',
+                    brand: '',
+                    contact_email: '',
+                    found_date: new Date().toISOString().split('T')[0]
+                };
+
+                console.log('准备提交数据:', baseData);
+
+                // 禁用按钮，显示加载状态
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner"></span>提交中...';
+
+                try {
+                    let imageUrl = '';
+
+                    // 如果有图片，先上传图片
+                    if (selectedFile) {
+                        showMessage('info', '正在上传图片...');
+
+                        const imageFormData = new FormData();
+                        imageFormData.append('file', selectedFile);
+
+                        const uploadResponse = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: imageFormData
+                        });
+
+                        const uploadResult = await uploadResponse.json();
+
+                        if (uploadResult.success) {
+                            imageUrl = uploadResult.url;
+                            console.log('图片上传成功:', imageUrl);
+                        } else {
+                            showMessage('warning', '图片上传失败，将仅提交文字信息');
+                        }
+                    }
+
+                    // 添加图片URL到数据
+                    const finalData = {
+                        ...baseData,
+                        image_url: imageUrl
+                    };
+
+                    // 提交物品信息
+                    const response = await fetch('/api/submit/found', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(finalData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // 显示成功消息
+                        const successMsg = selectedFile ?
+                            `<strong>提交成功！</strong><br>
+                             招领信息和图片已发布。2秒后跳转到招领物品列表...` :
+                            `<strong>提交成功！</strong><br>
+                             招领信息已发布。2秒后跳转到招领物品列表...`;
+
+                        showMessage('success', successMsg);
+
+                        // 清空表单
+                        form.reset();
+                        selectedFile = null;
+                        imagePreview.style.display = 'none';
+
+                        // 2秒后跳转
+                        setTimeout(() => {
+                            window.location.href = '/found';
+                        }, 2000);
+
+                    } else {
+                        // 显示错误消息
+                        showMessage('danger',
+                            `<strong>提交失败：</strong><br>
+                            ${result.error || '未知错误'}`);
+
+                        // 恢复按钮
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '提交招领信息';
+                    }
+
+                } catch (error) {
+                    console.error('提交出错:', error);
+                    showMessage('danger',
+                        `<strong>网络错误：</strong><br>
+                        请检查网络连接后重试`);
+
+                    // 恢复按钮
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '提交招领信息';
+                }
+            });
+
+            // 输入框实时验证
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                });
+            });
+
+            // 电话输入限制
+            const phoneInput = document.getElementById('contact_phone');
+            phoneInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+            });
+        });
+    </script>
+</body>
+</html>

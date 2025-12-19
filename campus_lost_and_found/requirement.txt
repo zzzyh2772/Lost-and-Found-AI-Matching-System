@@ -1,0 +1,18 @@
+# Web框架
+Flask>=2.3.0
+Flask-CORS>=3.0.0
+Werkzeug>=2.3.0
+
+# 深度学习
+torch>=2.0.0
+transformers>=4.34.0
+numpy>=1.23.0
+
+# AI模型接口 (通义千问 SDK)
+dashscope>=1.14.0
+
+# 其他
+requests>=2.28.0
+Pillow>=10.0.0
+pandas>=2.0.0
+python-dateutil>=2.8.0

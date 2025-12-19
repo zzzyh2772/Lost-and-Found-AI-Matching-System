@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI寻物助手 - 对话式交互</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4a9eff;
+            --secondary-color: #6c63ff;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --text-color: #2d3748;
+            --user-bg: #e6f7ff;
+            --ai-bg: #f6f8fa;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background-color: var(--light-bg);
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .navbar-brand i {
+            margin-right: 8px;
+        }
+
+        /* 主容器 */
+        .main-container {
+            height: calc(100vh - 60px);
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* 左侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-title {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .quick-actions {
+            flex: 1;
+        }
+
+        .action-btn {
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: white;
+            color: var(--text-color);
+            text-align: left;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary-color);
+            background: var(--light-bg);
+            transform: translateY(-2px);
+        }
+
+        .action-btn i {
+            margin-right: 10px;
+            color: var(--primary-color);
+            width: 20px;
+        }
+
+        .nav-link {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-item a {
+            text-decoration: none;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .nav-item a:hover {
+            background: var(--light-bg);
+            color: var(--primary-color);
+        }
+
+        .nav-item i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        /* 聊天主区域 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        /* 聊天头部 */
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(135deg, #f6f8fa, #ffffff);
+        }
+
+        .ai-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 15px;
+        }
+
+        .ai-info h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--text-color);
+        }
+
+        .ai-info p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        /* 消息区域 */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafbfc;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            margin-left: auto;
+        }
+
+        .ai-message {
+            margin-right: auto;
+        }
+
+        .message-bubble {
+            padding: 16px 20px;
+            border-radius: 18px;
+            position: relative;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .user-message .message-bubble {
+            background: var(--user-bg);
+            border-bottom-right-radius: 5px;
+            color: var(--text-color);
+        }
+
+        .ai-message .message-bubble {
+            background: var(--ai-bg);
+            border-bottom-left-radius: 5px;
+            color: var(--text-color);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .ai-message .message-time {
+            text-align: left;
+        }
+
+        /* 引导卡片 */
+        .guide-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .guide-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .guide-card i {
+            color: var(--primary-color);
+            margin-right: 10px;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+        }
+
+        #sendButton {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #sendButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.2);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .quick-reply {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            background: var(--light-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: var(--user-bg);
+            border-color: var(--primary-color);
+        }
+
+        /* 加载动画 */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: var(--ai-bg);
+            border-radius: 18px;
+            margin-bottom: 10px;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                margin-bottom: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-robot"></i>
+                AI寻物助手 - 智能对话版
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">随时为您提供帮助</span>
+                <a href="/" class="btn btn-outline-light btn-sm">
+                    返回主页
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-title">
+                <i class="fas fa-magic me-2"></i>快速操作
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-btn" onclick="sendQuickAction('帮我描述一个丢失的物品')">
+                    <i class="fas fa-file-alt"></i>
+                    <span>帮我描述物品</span>
+                </button>
+
+                <button class="action-btn" onclick="sendQuickAction('如何写寻物启事？')">
+                    <i class="fas fa-search"></i>
+                    <span>生成寻物启事</span>
+                </button>
+
+                <button class="action-btn" onclick="sendQuickAction('如何写招领启事？')">
+                    <i class="fas fa-hand-holding-heart"></i>
+                    <span>生成招领启事</span>
+                </button>
+
+                <button class="action-btn" onclick="sendQuickAction('校园卡丢了怎么办？')">
+                    <i class="fas fa-id-card"></i>
+                    <span>校园卡丢失指南</span>
+                </button>
+
+                <button class="action-btn" onclick="sendQuickAction('在哪里最容易找到丢失的物品？')">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>常见丢失地点</span>
+                </button>
+            </div>
+
+            <div class="nav-link">
+                <div class="sidebar-title">
+                    <i class="fas fa-external-link-alt me-2"></i>快速导航
+                </div>
+                <div class="nav-item">
+                    <a href="/submit/lost">
+                        <i class="fas fa-exclamation-circle"></i>
+                        提交丢失物品
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/submit/found">
+                        <i class="fas fa-hand-holding"></i>
+                        提交招领物品
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/lost">
+                        <i class="fas fa-list"></i>
+                        查看丢失物品
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/found">
+                        <i class="fas fa-list-alt"></i>
+                        查看招领物品
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/match">
+                        <i class="fas fa-heart"></i>
+                        匹配物品
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天主区域 -->
+        <div class="chat-container">
+            <!-- 聊天头部 -->
+            <div class="chat-header">
+                <div class="d-flex align-items-center">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-info">
+                        <h3>AI寻物助手</h3>
+                        <p>24小时在线，随时为您提供帮助</p>
+                    </div>
+                    <div class="ms-auto">
+                        <span class="badge bg-success">在线</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消息区域 -->
+            <div class="messages-area" id="messagesArea">
+                <!-- 欢迎消息 -->
+                <div class="message ai-message">
+                    <div class="message-bubble">
+                        校园失物招领助手。<br><br>
+                        需要：描述物品、写启事、回答问题？<br>
+                        直接告诉我你的需求。
+                    </div>
+                    <div class="message-time">刚刚</div>
+
+                    <!-- 引导卡片 -->
+                    <div class="guide-card" onclick="sendQuickAction('帮我描述一个校园卡')">
+                        <i class="fas fa-id-card"></i>
+                        <strong>需要描述物品？</strong><br>
+                        点击这里，我来帮你描述校园卡、手机、钱包等物品
+                    </div>
+
+                    <div class="guide-card" onclick="window.location.href='/submit/lost'">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>提交丢失物品</strong><br>
+                        点击直接跳转到提交页面
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <div class="input-group">
+                    <input type="text"
+                           id="messageInput"
+                           placeholder="输入您的问题，例如：校园卡丢了怎么办？"
+                           onkeypress="handleKeyPress(event)">
+                    <button id="sendButton" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+
+                <div class="quick-reply">
+                    <div class="quick-btn" onclick="sendQuickAction('校园卡丢了怎么找？')">校园卡丢失</div>
+                    <div class="quick-btn" onclick="sendQuickAction('手机丢了怎么办？')">手机丢失</div>
+                    <div class="quick-btn" onclick="sendQuickAction('书包丢了怎么找？')">书包丢失</div>
+                    <div class="quick-btn" onclick="sendQuickAction('怎么描述捡到的物品？')">描述捡到物品</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM元素
+        const messagesArea = document.getElementById('messagesArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // 对话历史 - 只存储真实的用户-AI对话
+        let conversationHistory = [];
+
+        // 添加消息到界面
+        function addMessage(content, isUser = false, isSystem = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+
+            const time = new Date().toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${content}</div>
+                <div class="message-time">${time}</div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+
+            // 只有真实的用户消息和AI回复才添加到历史记录
+            if (!isSystem) {
+                conversationHistory.push({
+                    role: isUser ? 'user' : 'assistant',
+                    content: content
+                });
+            }
+        }
+
+        // 显示正在输入状态
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai-message';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            messagesArea.appendChild(typingDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // 隐藏正在输入状态
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage(message, true);
+            messageInput.value = '';
+            sendButton.disabled = true;
+
+            // 显示正在输入
+            showTypingIndicator();
+
+            try {
+                // 调用后端API
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: conversationHistory.slice(-8) // 只发送最近8条历史
+                    })
+                });
+
+                const data = await response.json();
+
+                // 隐藏正在输入
+                hideTypingIndicator();
+
+                if (data.reply) {
+                    // 添加AI回复
+                    addMessage(data.reply, false);
+
+                    // 如果有链接建议，添加到回复后面（不作为对话历史）
+                    if (data.links && data.links.length > 0) {
+                        setTimeout(() => {
+                            const linksDiv = document.createElement('div');
+                            linksDiv.className = 'guide-card';
+                            linksDiv.style.marginTop = '10px';
+
+                            let linksHtml = '<strong>相关链接：</strong><br>';
+                            data.links.forEach(link => {
+                                linksHtml += `<a href="${link.url}" style="color: var(--primary-color);">${link.text}</a><br>`;
+                            });
+
+                            linksDiv.innerHTML = linksHtml;
+                            messagesArea.appendChild(linksDiv);
+                            messagesArea.scrollTop = messagesArea.scrollHeight;
+                        }, 100);
+                    }
+                } else {
+                    addMessage('抱歉，我暂时无法回答这个问题。请稍后重试。', false);
+                }
+
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                hideTypingIndicator();
+                addMessage('抱歉，网络连接出现问题，请稍后重试。', false);
+            }
+
+            sendButton.disabled = false;
+            messageInput.focus();
+        }
+
+        // 发送快速操作
+        function sendQuickAction(actionText) {
+            messageInput.value = actionText;
+            sendMessage();
+        }
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 页面加载完成后自动聚焦输入框
+        document.addEventListener('DOMContentLoaded', function() {
+            messageInput.focus();
+
+            // 获取欢迎消息
+            fetch('/api/ai/welcome')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.welcome) {
+                        // 更新欢迎消息（不作为对话历史）
+                        const welcomeMessage = document.querySelector('.ai-message .message-bubble');
+                        if (welcomeMessage) {
+                            welcomeMessage.innerHTML = data.welcome;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.log('获取欢迎消息失败:', error);
+                });
+        });
+
+        // 自动调整输入框高度
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    </script>
+</body>
+</html>
